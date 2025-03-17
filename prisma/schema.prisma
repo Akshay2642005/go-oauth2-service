@@ -1,0 +1,19 @@
+generator client {
+  provider = "prisma-client-go"
+}
+
+datasource db {
+  provider = "postgresql" // Change to "sqlite" if using SQLite
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  googleID     String   @unique
+  avatarURL    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
