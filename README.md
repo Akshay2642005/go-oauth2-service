@@ -3,9 +3,9 @@
 This project implements a Go web service with user authentication via Google OAuth 2.0. It uses the following key technologies:
 
 * **Go:** The programming language for the backend service.
-* **Gin:** A high-performance HTTP web framework for Go.
 * **goth:** A multi-provider authentication package for Go.
-* **sessions:** Secure cookie-based session management.
+* **gorilla/mux:** A powerful URL router and dispatcher for Go.
+* **gorilla/sessions:** Secure cookie-based session management.
 * **Prisma:** An ORM for database interactions.
 * **PostgreSQL:** The database used for storing user data.
 
@@ -19,40 +19,40 @@ This project implements a Go web service with user authentication via Google OAu
 
 1. **Clone the repository:**
 
-```bash
-git clone https://github.com/your-username/your-repository.git
-```
+    ```bash
+    git clone https://github.com/Akshay2642005/go-oauth2-service.git
+    ```
 
 2. **Install dependencies:**
 
-```bash
-go mod download
-```
+    ```bash
+    go mod tidy
+    ```
 
 3. **Set up environment variables:**
 
-Create a `.env` file in the root directory and set the following environment variables:
+    Create a `.env` file in the root directory and set the following environment variables:
 
-```
-PUBLIC_HOST=http://localhost
-PORT=8000
-DATABASE_URL="your_database_url"
-COOKIES_AUTH_SECRET="some-very-secret-key"
-GOOGLE_CLIENT_ID="your_google_client_id"
-GOOGLE_CLIENT_SECRET="your_google_client_secret"
-```
+    ```
+    PUBLIC_HOST=http://localhost
+    PORT=8000
+    DATABASE_URL="your_database_url"
+    COOKIES_AUTH_SECRET="some-very-secret-key"
+    GOOGLE_CLIENT_ID="your_google_client_id"
+    GOOGLE_CLIENT_SECRET="your_google_client_secret"
+    ```
 
 4. **Run database migrations:**
 
-```bash
-prisma migrate dev
-```
+    ```bash
+    prisma migrate dev
+    ```
 
 5. **Run the server:**
 
-```bash
-go run main.go
-```
+    ```bash
+    go run main.go
+    ```
 
 ## API Endpoints
 
