@@ -37,7 +37,7 @@ func NewCookieStore(opts SessionOptions) *sessions.CookieStore {
 	case "None":
 		store.Options.SameSite = http.SameSiteNoneMode
 	default:
-		store.Options.SameSite = http.SameSiteLaxMode // Default to Lax for security
+		store.Options.SameSite = http.SameSiteNoneMode // Default to Lax for security
 	}
 
 	return store

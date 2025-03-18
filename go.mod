@@ -18,6 +18,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/rs/cors v1.11.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.0.1 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

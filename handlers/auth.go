@@ -1,17 +1,41 @@
 package handlers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"server/prisma/db"
-	"server/utils"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 )
 
 func (h *Handler) HandleProviderLogin(w http.ResponseWriter, r *http.Request) {
 	gothic.BeginAuthHandler(w, r)
+}
+
+func (h *Handler) HandleSessionUser(w http.ResponseWriter, r *http.Request) {
+	session, err := gothic.Store.Get(r, "session_name") // ✅ Ensure correct session name
+	if err != nil {
+		http.Error(w, "Session not found (error getting session)", http.StatusUnauthorized)
+		fmt.Println("Error fetching session:", err)
+		return
+	}
+
+	fmt.Println("Session Values:", session.Values) // ✅ Debugging session values
+
+	user, exists := session.Values["user"]
+	if !exists {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		fmt.Println("Session exists, but no user found!")
+		return
+	}
+
+	fmt.Println("User found in session:", user)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Handler) HandleAuthCallbackFunction(w http.ResponseWriter, r *http.Request) {
@@ -21,9 +45,11 @@ func (h *Handler) HandleAuthCallbackFunction(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Try to find user in DB
 	dbUser, err := h.db.User.FindFirst(
 		db.User.GoogleID.Equals(user.UserID),
 	).Exec(r.Context())
+	// If user does not exist, create a new one
 	if err != nil {
 		var avatarURL *string
 		if user.AvatarURL != "" {
@@ -42,26 +68,36 @@ func (h *Handler) HandleAuthCallbackFunction(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
-	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": dbUser.ID,
-		"exp":     expirationTime.Unix(),
-	})
-
-	tokenString, err := claims.SignedString([]byte("your-secret-key"))
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
+	// Extract avatar URL properly
+	var avatarURL string
+	if avatar, ok := dbUser.AvatarURL(); ok { // Call the function to get the value
+		avatarURL = avatar
 	}
 
-	err = utils.StoreUserSession(w, r, dbUser.ID, tokenString)
+	// Convert `dbUser` to `goth.User` for session storage
+	gothUser := goth.User{
+		UserID:    dbUser.GoogleID,
+		Email:     dbUser.Email,
+		Name:      dbUser.Name,
+		AvatarURL: avatarURL, // Use extracted value
+	}
+
+	// Store the session
+	err = h.auth.StoreUserSession(w, r, gothUser)
 	if err != nil {
 		http.Error(w, "Failed to store session", http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Location", "/dashboard")
-	w.WriteHeader(http.StatusSeeOther)
+	// ✅ Send a response first to confirm session is saved
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Session stored successfully",
+		"redirect": "http://localhost:5173/dashboard?name=" + url.QueryEscape(user.Name) +
+			"&email=" + url.QueryEscape(user.Email) +
+			"&avatar=" + url.QueryEscape(avatarURL),
+	})
 }
 
 func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
@@ -71,8 +107,7 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.RemoveUserSession(w, r)
+	h.auth.RemoveUserSession(w, r)
 
-	w.Header().Set("Location", "/")
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "http://localhost:5173/", http.StatusSeeOther)
 }
